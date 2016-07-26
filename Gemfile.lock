@@ -94,3 +94,6 @@ DEPENDENCIES
   yard-kramdown
   yard-rails
   yard-sd
+
+BUNDLED WITH
+   1.11.2
