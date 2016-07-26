@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'open-uri'
 require 'rubygems/package'
+require_relative 'docker'
 
 module YARD
   module Server
@@ -40,7 +41,7 @@ module YARD
         end
 
         # Generate
-        Thread.new { generate_yardoc }
+        Thread.new { sh(generate_yardoc, "Generating from disk: #{source_path}", false) }
         raise LibraryNotPreparedError
       end
 
@@ -64,7 +65,7 @@ module YARD
           begin
             open(url) do |io|
               expand_gem(io)
-              generate_yardoc(safe_mode)
+              sh(generate_yardoc, "Generating remote gem #{name}-#{version}", false)
               clean_source(safe_mode)
             end
           rescue OpenURI::HTTPError => e
@@ -91,10 +92,11 @@ module YARD
 
       private
 
-      def generate_yardoc(safe_mode)
-        `cd #{source_path} &&
-          #{YARD::ROOT}/../bin/yardoc -n -q #{safe_mode ? '--safe' : ''} &&
-          touch .yardoc/complete`
+      include DockerRunner
+
+      def generate_yardoc
+        dock_opts = "-v #{source_path}:/yardoc -w /yardoc"
+        docker_command("bundle exec yard -n -q", dock_opts)
       end
 
       def expand_gem(io)

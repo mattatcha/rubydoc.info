@@ -3,11 +3,13 @@ require 'json'
 require_relative 'source_cleaner'
 require_relative 'helpers'
 require_relative 'cache'
+require_relative 'docker'
 
 class InvalidSchemeError < RuntimeError; end
 
 class ScmCheckout
   include Helpers
+  include DockerRunner
 
   attr_accessor :name, :url, :settings, :app, :commit
 
@@ -109,7 +111,9 @@ class GithubCheckout < ScmCheckout
   end
 
   def checkout_command
-    "#{git_checkout_command} && #{YARD::ROOT}/../bin/yardoc -n -q #{YARD::Config.options[:safe_mode] ? '--safe' : ''}"
+    dock_opts = "-v #{repository_path}:/yardoc -w /yardoc"
+    dock_cmd = docker_command("bundle exec yard -n -q", dock_opts)
+    "#{git_checkout_command} && #{dock_cmd}"
   end
 
   def clear_source_files

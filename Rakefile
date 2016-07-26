@@ -83,6 +83,20 @@ namespace :stdlib do
 end
 
 DOCKER_IMAGE = "docmeta/rubydoc.info:latest"
+DOCKER_LABEL = "docmeta.rubydoc"
+
+def docker_options
+  stat = File.stat('log')
+  paths = []
+  File.readlines('.dockerignore').each do |line|
+    line = line.strip
+    next if line.empty?
+    paths << "-v #{Dir.pwd}/#{line}:/app/#{line}"
+  end
+
+  "-d -p 8080:8080 -u #{stat.uid}:#{stat.gid} -l #{DOCKER_LABEL}=true " +
+  "-v /var/run/docker.sock:/var/run/docker.sock #{paths.join(" ")}"
+end
 
 namespace :docker do
   desc 'Build docker image'
@@ -99,18 +113,18 @@ namespace :docker do
   task :start do
     mkdir_p 'tmp/pids'
     mkdir_p 'log'
-    paths = []
-    File.readlines('.dockerignore').each do |line|
-      line = line.strip
-      next if line.empty?
-      paths << "-v #{Dir.pwd}/#{line}:/app/#{line}"
-    end
-    sh "docker run -d -p 8080:8080 #{paths.join(" ")} #{DOCKER_IMAGE}"
+    touch 'config/config.yaml'
+    sh "docker run #{docker_options} #{DOCKER_IMAGE}"
+  end
+
+  task :ps do
+    system "docker ps -f label=#{DOCKER_LABEL} -q"
   end
 
   task :shell do
-    pid = `docker ps -q`.strip.split(/\r?\n/).first
-    sh "docker exec -it #{pid} /bin/bash"
+    stat = File.stat('log')
+    pid = `rake docker:ps`.strip.split(/\r?\n/).first
+    sh "docker exec -u #{stat.uid}:#{stat.gid} -it #{pid} /bin/bash"
   end
 
   task :git_pull do
@@ -124,7 +138,7 @@ namespace :docker do
 
   desc 'Stops docker image'
   task :stop do
-    pids = `docker ps -f label=docmeta.rubydoc -q`.strip
+    pids = `rake docker:ps`.strip
     sh "docker rm -f #{pids}"
   end
 

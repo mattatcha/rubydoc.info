@@ -1,3 +1,4 @@
+.git
 config/config.yaml
 data
 log
@@ -9,4 +10,3 @@ vendor
 .gitignore
 MIT-LICENSE
 README.md
-recent.sqlite
