@@ -1,21 +1,3 @@
-require 'sequel'
-require 'base64'
-
-DB = Sequel.sqlite('recent.sqlite')
-unless DB.table_exists?(:library_stores)
-  DB.create_table(:library_stores) do
-    primary_key :id
-    string :name
-    string :source
-    text :versions
-    timestamp :created_at
-  end
-end
-
-class LibraryStore < Sequel::Model
-  plugin :serialization, :marshal, :versions
-end
-
 class RecentStore
   def initialize(maxsize = 20)
     @maxsize = maxsize
@@ -23,20 +5,34 @@ class RecentStore
 
   def push(library_versions)
     library_name = library_versions.first.name
-    unless LibraryStore.select(:name).where(:name => library_name).first
-      LibraryStore.create(
-        :name => library_name,
-        :versions => library_versions,
-        :source => 'github',
-        :created_at => Time.now)
+    recent = get
+    if recent.none? {|t| t.first.name == library_name }
+      recent.unshift(library_versions)
+    end
+
+    recent = recent[0, @maxsize] # truncate
+    File.open(RECENT_DB_FILE, File::RDWR|File::CREAT) do |f|
+      f.flock(File::LOCK_EX)
+      f.rewind
+      f.write(Marshal.dump(recent))
+      f.flush
     end
   end
 
+  def get
+    File.open(RECENT_DB_FILE, "r") do |f|
+      f.flock(File::LOCK_SH)
+      Marshal.load(f.read)
+    end
+  rescue IOError, Errno::ENOENT
+    []
+  end
+
   def size
-    LibraryStore.count
+    get.size
   end
 
   def each(&block)
-    LibraryStore.select.order(Sequel.desc(:created_at)).limit(@maxsize).all.each(&block)
+    get.each(&block)
   end
 end

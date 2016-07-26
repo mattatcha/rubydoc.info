@@ -33,7 +33,7 @@ DATA_PATH        = __p('data')
 TEMPLATES_PATH   = __p('templates')
 CONFIG_FILE      = __p('config', 'config.yaml', :file)
 REMOTE_GEMS_FILE = __p('data', 'remote_gems', :file)
-RECENT_SQL_FILE  = __p('data', 'recent.sqlite', :file)
+RECENT_DB_FILE   = __p('data', 'recent.db', :file)
 
 require_relative 'lib/helpers'
 require_relative 'lib/cache'
