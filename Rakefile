@@ -14,6 +14,7 @@ namespace :server do
     mkdir_p 'tmp/pids'
     mkdir_p 'log'
     bundle = "bundle exec " unless ENV['DOCKERIZED']
+    ENV['BUNDLE_GEMFILE'] = File.join(File.dirname(__FILE__), 'Gemfile')
     sh "#{bundle}puma -C config/puma.rb"
   end
 
