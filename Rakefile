@@ -84,7 +84,7 @@ namespace :stdlib do
 end
 
 DOCKER_IMAGE = "docmeta/rubydoc.info:latest"
-DOCKER_LABEL = "docmeta.rubydoc"
+DOCKER_NAME = "docmeta_rubydoc_server"
 
 def docker_options
   stat = File.stat('log')
@@ -95,7 +95,7 @@ def docker_options
     paths << "-v #{Dir.pwd}/#{line}:/app/#{line}"
   end
 
-  "-d -p 8080:8080 -u #{stat.uid}:#{stat.gid} -l #{DOCKER_LABEL}=true " +
+  "-d -p 8080:8080 -u #{stat.uid}:#{stat.gid} --name #{DOCKER_NAME} " +
   "-v /var/run/docker.sock:/var/run/docker.sock #{paths.join(" ")}"
 end
 
@@ -119,13 +119,13 @@ namespace :docker do
   end
 
   task :ps do
-    system "docker ps -f label=#{DOCKER_LABEL} -q"
+    system "docker ps -f name=#{DOCKER_NAME} -q"
   end
 
   task :shell do
     stat = File.stat('log')
     pid = `rake docker:ps`.strip.split(/\r?\n/).first
-    sh "docker exec -u #{stat.uid}:#{stat.gid} -it #{pid} /bin/bash"
+    sh "docker exec -u #{stat.uid}:#{stat.gid} -it #{DOCKER_NAME} /bin/bash"
   end
 
   task :git_pull do
@@ -140,7 +140,7 @@ namespace :docker do
   desc 'Stops docker image'
   task :stop do
     pids = `rake docker:ps`.strip
-    sh "docker rm -f #{pids}"
+    sh "docker rm -f #{DOCKER_NAME}"
   end
 
   desc 'Restart docker image'
