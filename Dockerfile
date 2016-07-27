@@ -22,5 +22,5 @@ ADD . /app
 EXPOSE 8080
 ENV DOCKERIZED=1
 ENV BUNDLE_GEMFILE=/app/Gemfile
-
+ENV DOCKER_IMAGE=docmeta/rubydoc.info
 CMD bundle exec rake server:start

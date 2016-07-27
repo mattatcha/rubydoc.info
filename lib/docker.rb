@@ -4,7 +4,7 @@ module DockerRunner
   def docker_command(command, extra_docker_opts = "")
     if ENV['DOCKERIZED']
       "docker run --volumes-from #{ENV['HOSTNAME']} -u `id -u`:`id -g` " +
-        "#{extra_docker_opts} docmeta/rubydoc.info #{command}".sub(/[ ]+/, ' ')
+        "#{extra_docker_opts} #{ENV['DOCKER_IMAGE']} #{command}".sub(/[ ]+/, ' ')
     else
       command
     end
